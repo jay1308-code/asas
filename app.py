@@ -288,31 +288,31 @@ def temp1():
 
 @app.route('/espac', methods=['GET','POST'])
 def espac():
-    try:  
+    try:      
+        name = str(request.args.get('name'))
         now = datetime.now()
         date = str(now.strftime("%b %d, %Y"))
         time = str(now.strftime("%I:%M:%S %p"))
         DATABASE_URL ='postgres://hzbckwzoqtmlqe:a0f34997b0c650328b4187f36564e47527d06b787f84733fb05555f4e9a9c15d@ec2-52-204-157-26.compute-1.amazonaws.com:5432/d7j9i3rbgtinuj'
         conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         cur = conn.cursor()
-        cur.execute('SELECT * FROM motorstatus;')
-        data = cur.fetchall()
+        print("name",name)
+        sql = "SELECT status FROM motorstatus WHERE name = %s"
+        var = (name, )
+        cur.execute(sql,var)
+        data = (cur.fetchall())
+        print("data",data)
+        data = data[0][0]
         sql = "UPDATE ping SET date = %s ,time = %s WHERE name = %s"
-        adr = (date,time,"lawbore", )
+        adr = (date,time,name, )
         cur.execute(sql,adr)
         conn.commit()
         cur.close()
         conn.close()
-        b = data[0][2]
-        c = 0
-        d = 0
-        e = 0
+        # data = "aa"
     except:
-        b = 5
-        c = 5
-        d = 5
-        e = 5
-    return str(b) + str(c)+ str(d)+ str(e) 
+        data = "pass"
+    return str(data)
 
 @app.route('/sched', methods=['GET','POST'])
 def sched():
