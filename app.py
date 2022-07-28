@@ -2,45 +2,19 @@ from re import S
 from telnetlib import STATUS
 from this import d
 from click import password_option
+from flask import redirect
 from flask import Flask, render_template, request, jsonify
 from datetime import datetime
 import json
 import os
 import psycopg2
 app = Flask(__name__)
-DATABASE_URL ='postgres://hzbckwzoqtmlqe:a0f34997b0c650328b4187f36564e47527d06b787f84733fb05555f4e9a9c15d@ec2-52-204-157-26.compute-1.amazonaws.com:5432/d7j9i3rbgtinuj'
+DATABASE_URL = 'postgres://mhaezgysmzajom:54bdabe172ddbafee73bb9f9655955b60e5e318bfafb50979cbb2450c2c18c35@ec2-34-198-186-145.compute-1.amazonaws.com:5432/d8s5vcff8toasv'
            
 
-# class motordata(db.Model):
-#     id =     db.Column(db.Integer,primary_key=True)
-#     date =   db.Column(db.String(1000))
-#     time =   db.Column(db.String(1000))
-#     status = db.Column(db.String(1000))
-#     onby =   db.Column(db.String(1000))
-# class acstatus(db.Model):
-#     id = db.Column(db.Integer,primary_key=True)
-#     ac = db.Column(db.String(1000))
-#     status = db.Column(db.String(1000))
-# class alaram(db.Model):
-#     id = db.Column(db.Integer,primary_key=True)
-#     motor = db.Column(db.String(1000))
-#     status = db.Column(db.String(1000))
-#     shour = db.Column(db.String(1000))
-#     smin = db.Column(db.String(1000))
-#     szone = db.Column(db.String(1000))
-#     ehour = db.Column(db.String(1000))
-#     emin = db.Column(db.String(1000))
-#     ezone = db.Column(db.String(1000))
-# class Logindata(db.Model):
-#     id = db.Column(db.Integer,primary_key=True)
-#     name = db.Column(db.String(1000))
-#     email = db.Column(db.String(1000))
-#     passsword = db.Column(db.String(1000))
-#     addkey = db.Column(db.String(1000))
-
-@app.route('/', methods=['GET', 'POST']) 
+@app.route('/', methods=['GET', 'POST']) #base root
 def home_page():    
-    # changedata("lawbore",1,"sahil")
+    # return redirect('/adminlogin')
     return render_template('login.html')
 
 @app.route('/LoginSubmit', methods=['POST'])
@@ -58,21 +32,49 @@ def logInSubmit():
             data = cur.fetchall()
             cur.close()
             conn.close()
-            # print(len(data))
-            # print("Step1")
-            if(data[0][5] == "admin"):
-                if(data[0][3]==password):
-                    return render_template('home.html' ,name = data[0][1])
-                else:
-                    return render_template('login.html')    
+            if(data[0][4]==password):
+                # print("data[0][6]",data[0][6])
+                if(data[0][6] == "admin"):
+                    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+                    conn
+                    cur = conn.cursor()
+                    cur.execute('SELECT * FROM roomdata;')
+                    task = cur.fetchall()  
+                    cur.close()
+                    conn.close()
+                    print(task)    
+                    return render_template('home.html' ,name = data[0][1],tasks=task[::-1])
+                elif(data[0][6] == "user"):
+                    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+                    cur = conn.cursor()
+                    sql="SELECT rid FROM roomaccess where name= %s"
+                    adr = (str(data[0][1]),)
+                    cur.execute(sql,adr)
+                    task = cur.fetchall()  
+                    string = "SELECT * FROM roomdata where rid ='"
+                    if(len(task)==1):
+                        string += task[0]
+                        string += "'"
+                    elif(len(task) > 1):
+                        for i in range(len(task)-1):
+                            string += task[i][0]
+                            string += "'"
+                            string += " or rid = '"
+                        string += task[len(task)-1][0]
+                        string += "'"
+                    print(string)
+                    cur.execute(string)
+                    task = cur.fetchall()  
+                    cur.close()
+                    conn.close()
+        
+                    return render_template('user.html' ,name = data[0][1],tasks=task[::-1])
             else:
-                return render_template('user.html',name = data[0][1])                    
-                # print("Step2")
-
+                return render_template('login.html')
         except:
             return render_template('login.html')
-    
-@app.route('/validemail', methods=['POST'])   #login
+
+@app.route('/validemail', methods=['POST','GET'])   #login
 def validemail():
     if (request.method == 'POST'):
         name = (request.json['name'])
@@ -107,19 +109,11 @@ def CheakUserName():
         else:
             return "chek"
 
-@app.route("/ne")
-def secret():
-    return render_template("signup.html")
-
-@app.route("/home")
-def home():
-    return render_template("home.html")
-
 
 @app.route('/signUpSubmit', methods=['POST'])
 def signUpSubmit():
-    if request.method == "POST":
-        try:    
+    try:
+        if request.method == "POST":    
             name = request.form.get("ck")  
             if(str(name) == "chek"):
                 add = request.form.get("fname")
@@ -127,20 +121,126 @@ def signUpSubmit():
                 emailaddr = request.form.get("email")
                 passwordt = request.form.get("password")
                 user = request.form.get("usertype")
+                mphone = request.form.get("phone")
                 if(add == "s@hil" or add == "bhus@n"):
                     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
                     conn
                     cur = conn.cursor()
-                    cur.execute('INSERT INTO logindata (name, email, password, addkey,logintype)'
-                                'VALUES (%s, %s, %s, %s, %s)',
-                                (full_name,emailaddr,passwordt,add,user))
+                    cur.execute('INSERT INTO logindata (name, email,phone, password, addkey,logintype)'
+                                'VALUES (%s, %s, %s, %s, %s, %s)',
+                                (full_name,emailaddr,mphone,passwordt,add,user))
                     conn.commit()
                     cur.close()
                     conn.close() 
                     return render_template('home.html')
-        except:
-            print("step3")
-            return render_template('signup.html')
+                else:
+                    return render_template('signup.html')
+            else:
+                return render_template('signup.html')
+    except:
+        print("step3")
+        return render_template('signup.html')
+
+@app.route("/ne")
+def secret():
+    return render_template("signup.html")
+
+@app.route("/home")
+def home():
+    return redirect('/adminlogin')
+    
+@app.route('/accessasign', methods=['POST','GET'])   #login
+def accessasign():
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    conn
+    cur = conn.cursor()
+    cur.execute('SELECT name FROM logindata where logintype = %s;',("user",))
+    name = cur.fetchall()
+    cur.execute('SELECT rid FROM roomdata;')
+    rid = cur.fetchall()
+    cur.close()
+    conn.close()
+    return render_template('accessasign.html',name=name,rid=rid)
+
+@app.route('/accessasignsub', methods=['POST','GET'])   #login
+def accessasignsub():
+    name =    request.form.get("name")
+    rid =  request.form.get("rid")
+    hour = request.form.get("hour")
+    print(name,rid,hour)
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    conn
+    cur = conn.cursor()
+    cur.execute('INSERT INTO roomaccess (name, rid,hour)'
+                'VALUES (%s, %s,%s)',
+                (name,rid,hour))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect('/accesslist')
+
+@app.route('/addroomsubmit', methods=['POST'])   #login
+def addroomsubmit():
+    rid =    request.form.get("rid")
+    espid =  request.form.get("espid")
+    # name = request.form.get("ck")
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    conn
+    cur = conn.cursor()
+    cur.execute('INSERT INTO roomdata (rid, espid, ac1, lock1, ac2, lock2)'
+                'VALUES (%s, %s,%s, %s, %s, %s)',
+                (rid, espid,0, 0,0,0))
+    cur.execute('INSERT INTO roomstatus (rid, espid, ac1, ac2)'
+                'VALUES (%s, %s,%s, %s)',
+                (rid, espid,0, 0))    
+    conn.commit()
+    cur.close()
+    conn.close()
+    print(rid , espid)
+    # adminlogin()
+    return redirect('/adminlogin')
+
+@app.route('/addroom', methods=['POST','GET'])   #login
+def addroom():
+    return render_template('addroom.html')
+
+
+
+@app.route("/cheakbox", methods=['POST','GET'])
+def cheakbox():
+    swa = (request.json['sw'])
+    stat = (request.json['data'])
+    nam = (request.json['name'])
+    x = swa.split("_")
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    cur = conn.cursor()
+    s = "UPDATE roomdata SET "
+    ql = "=%s WHERE id = %s"
+    sql = s + str(x[1]) + ql 
+    adr = (int(stat),int(x[0]),)
+    cur.execute(sql, adr)
+    cur.execute('SELECT rid FROM roomdata where id = %s;',(int(x[0]),))
+    temp = cur.fetchall()
+    if(int(stat)==1):
+        te = str(temp[0][0])+" "+str(x[1])+" is on"
+    else:
+        te = str(temp[0][0])+" "+str(x[1])+" is off"
+    cur.execute('INSERT INTO logs (log, method)'    
+                'VALUES (%s, %s)',
+                (te, nam,))
+
+    if(str(x[1])=="ac1" or str(x[1])=="ac2"):
+        s = "UPDATE roomstatus SET "
+        ql = "=%s WHERE rid = %s"
+        sql = s + str(x[1]) + ql 
+        print(str(temp[0][0]))
+        adr = (int(stat),str(temp[0][0]),)
+        cur.execute(sql,adr)
+    conn.commit()
+    cur.close()
+    conn.close()
+    return "ok"
+
 
 @app.route('/logininfo', methods=['GET', 'POST']) 
 def data_page():
@@ -158,68 +258,61 @@ def data_page():
     conn.close()
     return render_template('logindata.html',data = data[::-1] , data1 = data1[::-1],status = data2[::-1],onby=data3[::-1])
     
-@app.route('/motorinfo', methods=['GET', 'POST']) 
-def ssa():
+@app.route('/logs', methods=['GET', 'POST']) 
+def logs():
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
     cur = conn.cursor()
-    cur.execute('SELECT name FROM motordata;')
+    cur.execute('SELECT * FROM logs;')
     data = cur.fetchall()
-    cur.execute('SELECT status FROM motordata;')
-    data1 = cur.fetchall()
-    cur.execute('SELECT onby FROM motordata;')
-    data2 = cur.fetchall()
-    cur.execute('SELECT time FROM motordata;')
-    data3 = cur.fetchall()
-    cur.execute('SELECT date FROM motordata;')
-    data4 = cur.fetchall()
+    # cur.execute('SELECT status FROM motordata;')
+    # data1 = cur.fetchall()
+    # cur.execute('SELECT onby FROM motordata;')
+    # data2 = cur.fetchall()
+    # cur.execute('SELECT time FROM motordata;')
+    # data3 = cur.fetchall()
+    # cur.execute('SELECT date FROM motordata;')
+    # data4 = cur.fetchall()
     cur.close()
     conn.close()
-    return render_template('datapage.html',date = data4[::-1],data = data[::-1] , data1 = data1[::-1],status = data2[::-1],onby=data3[::-1])
+    return render_template('log.html',data = data[::-1])
 
-def changedata(name,status,onby):
-    print("change data")
-    now = datetime.now()
-    date = str(now.strftime("%b %d, %Y"))
-    time = str(now.strftime("%I:%M:%S %p"))
-    DATABASE_URL ='postgres://hzbckwzoqtmlqe:a0f34997b0c650328b4187f36564e47527d06b787f84733fb05555f4e9a9c15d@ec2-52-204-157-26.compute-1.amazonaws.com:5432/d7j9i3rbgtinuj'
+
+@app.route('/adminlogin')
+def adminlogin():
+    # name = request.args.get('name')
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
     cur = conn.cursor()
-    sql = "UPDATE motorstatus SET status = %s WHERE name = %s"
-    adr = (status,name,)
-    cur.execute(sql,adr)
-    cur.execute('INSERT INTO motordata (name, status, onby,date,time)'
-                'VALUES (%s, %s, %s,%s, %s)',
-                (name, status, onby,date,time))
-    # cur.execute('SELECT * FROM motorstatus;')
-    # data = cur.fetchall()
-    # print(".......................")
-    # print(data)
+    cur.execute('SELECT * FROM roomdata;')
+    task = cur.fetchall()  
+    cur.close()
+    conn.close()
+    return render_template('home.html' , tasks=task[::-1])
+
+@app.route('/adminlogi')
+def adminlogi():
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    cur = conn.cursor()
+    cur.execute('SELECT name FROM logindata;')
+    namelist = cur.fetchall()  
+    cur.close()
+    conn.close()
+    return render_template('access.html' , chooesname = "Chooes name", namelist=namelist[::-1])
+
+@app.route('/accesslist', methods=['POST','GET'])
+def accesslist():
+    name = request.form.get('fullname')
+    print("name",name)
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    cur = conn.cursor()
+    cur.execute('SELECT name FROM logindata where logintype = %s;',("user",))
+    namelist = cur.fetchall()
+    cur.execute('SELECT * FROM roomaccess where name = %s;',(name,))
+    data = cur.fetchall()
+    print(data)
     conn.commit()
     cur.close()
     conn.close()
-
-@app.route('/switch', methods=['POST'])
-def aaa():
-    sw = (request.json['sw'])
-    stat = (request.json['data'])
-    print(sw)
-    print(stat)
-    try:
-        name = (request.json['name'])
-    except:
-        name = "Eror"
-    if(sw==1):
-        changedata("lawbore",stat,name)
-    elif(sw==2):
-        changedata("sprinkles",stat,name)
-    elif(sw==3):
-        changedata("lawborealaram",stat,name)
-    elif(sw==4):
-        changedata("sprinklesalaram",stat,name)
-    else:
-        acno = "as"
-    return "ok"
-
+    return render_template('access.html' , namelist = namelist[::-1] , chooesname = name , tasks=data[::-1])
 
 # @app.route('/update', methods=['POST'])
 # def update():
@@ -293,7 +386,6 @@ def espac():
         now = datetime.now()
         date = str(now.strftime("%b %d, %Y"))
         time = str(now.strftime("%I:%M:%S %p"))
-        DATABASE_URL ='postgres://hzbckwzoqtmlqe:a0f34997b0c650328b4187f36564e47527d06b787f84733fb05555f4e9a9c15d@ec2-52-204-157-26.compute-1.amazonaws.com:5432/d7j9i3rbgtinuj'
         conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         cur = conn.cursor()
         print("name",name)
@@ -324,7 +416,6 @@ def sched():
         # print(name)
         # print(starttime)
         # print(endtime)
-        # DATABASE_URL ='postgres://hzbckwzoqtmlqe:a0f34997b0c650328b4187f36564e47527d06b787f84733fb05555f4e9a9c15d@ec2-52-204-157-26.compute-1.amazonaws.com:5432/d7j9i3rbgtinuj'
         conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         cur = conn.cursor()
         sql = "UPDATE alaram SET stime = %s , etime = %s WHERE name = %s"
@@ -364,7 +455,6 @@ def swpos():
 @app.route('/online', methods=['GET','POST'])
 def online():
     try:
-        DATABASE_URL ='postgres://hzbckwzoqtmlqe:a0f34997b0c650328b4187f36564e47527d06b787f84733fb05555f4e9a9c15d@ec2-52-204-157-26.compute-1.amazonaws.com:5432/d7j9i3rbgtinuj'
         conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         cur = conn.cursor()
         cur.execute('SELECT * FROM ping;')
@@ -397,5 +487,5 @@ if __name__ == '__main__':
     # db.switch.drop()
     app.jinja_env.auto_reload = True
     app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.run(host='0.0.0.0', port=82)
+    app.run(host='0.0.0.0', port=80)
         
