@@ -29,6 +29,66 @@
   background-color: #04AA6D;
   color: white;
 }
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
 
     </style>
     </head>
@@ -50,19 +110,39 @@
       <tr>
         <th>
         <b>{{ task[1] }}</b>
-        </th><th>ac1
+        </th>
+
+        <th>ac1</th><th>
+        <label class="switch">
         {% if task[3] %}<input type="checkbox" value={{ task[0]|string + "_ac1" }}  onclick='handleClick(this);' checked> 
         {% else %}<input type="checkbox" value={{ task[0]|string + "_ac1" }} onclick='handleClick(this); '>{% endif %}
-        </th><th>lock1
+        <span class="slider round"></span>
+        </label>  
+        </th>
+
+        <th>lock1</th><th>
+        <label class="switch">
         {% if task[4] %}<input type="checkbox" value={{ task[0]|string + "_lock1" }}  onclick='handleClick(this);' checked> 
         {% else %}<input type="checkbox" value={{ task[0]|string + "_lock1" }} onclick='handleClick(this); '>{% endif %}
-        </th><th>ac2
+        <span class="slider round"></span>
+        </label>  
+        </th>
+        
+        <th>ac2</th><th>
+        <label class="switch">
         {% if task[5] %}<input type="checkbox" value={{ task[0]|string + "_ac2" }}  onclick='handleClick(this);' checked> 
         {% else %}<input type="checkbox" value={{ task[0]|string + "_ac2" }} onclick='handleClick(this); '>{% endif %}
-        </th><th>lock2
+        <span class="slider round"></span>
+        </label>
+        </th>
+        
+        <th>lock2</th><th>
+        <label class="switch">
         {% if task[6] %}<input type="checkbox" value={{ task[0]|string + "_lock2" }}  onclick='handleClick(this);' checked> 
         {% else %}<input type="checkbox" value={{ task[0]|string + "_lock2" }} onclick='handleClick(this); '>{% endif %}              
-      </th></tr>
+        <span class="slider round"></span>
+        </label>
+        </th></tr>
       {% endfor %}
     </table>
 
