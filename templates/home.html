@@ -142,7 +142,12 @@ input:checked + .slider:before {
         {% else %}<input type="checkbox" value={{ task[0]|string + "_lock2" }} onclick='handleClick(this); '>{% endif %}              
         <span class="slider round"></span>
         </label>
-        </th></tr>
+        </th>
+      <th>
+        <b>{{ task[7] }}</b>
+      </th>
+      </tr>
+
       {% endfor %}
     </table>
 

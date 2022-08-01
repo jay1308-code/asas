@@ -33,6 +33,7 @@ def logInSubmit():
             cur.close()
             conn.close()
             if(data[0][4]==password):
+                print("passowed")
                 # print("data[0][6]",data[0][6])
                 if(data[0][6] == "admin"):
                     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
@@ -53,25 +54,34 @@ def logInSubmit():
                     task = cur.fetchall()  
                     string = "SELECT * FROM roomdata where rid ='"
                     if(len(task)==1):
-                        string += task[0]
+                        string += str(task[0][0])
                         string += "'"
+                        cur.execute(string)
+                        task = cur.fetchall()  
+                        print(string)
+                        cur.close()
+                        conn.close()
+                        return render_template('user.html' ,name = data[0][1],tasks=task[::-1])
                     elif(len(task) > 1):
                         for i in range(len(task)-1):
-                            string += task[i][0]
+                            string += str(task[i][0])
                             string += "'"
                             string += " or rid = '"
                         string += task[len(task)-1][0]
                         string += "'"
-                    print(string)
-                    cur.execute(string)
-                    task = cur.fetchall()  
-                    cur.close()
-                    conn.close()
-        
-                    return render_template('user.html' ,name = data[0][1],tasks=task[::-1])
+                        cur.execute(string)
+                        task = cur.fetchall()  
+                        print(string)
+                        cur.close()
+                        conn.close()
+                        return render_template('user.html' ,name = data[0][1],tasks=task[::-1])
+                    else:    
+                        return render_template('user.html' ,name = data[0][1])
             else:
+                print("encorrect pass")
                 return render_template('login.html')
         except:
+            print("pass")
             return render_template('login.html')
 
 @app.route('/validemail', methods=['POST','GET'])   #login
@@ -132,7 +142,7 @@ def signUpSubmit():
                     conn.commit()
                     cur.close()
                     conn.close() 
-                    return render_template('home.html')
+                    return render_template('login.html')
                 else:
                     return render_template('signup.html')
             else:
@@ -383,28 +393,24 @@ def temp1():
 def espac():
     try:      
         name = str(request.args.get('name'))
-        now = datetime.now()
-        date = str(now.strftime("%b %d, %Y"))
-        time = str(now.strftime("%I:%M:%S %p"))
         conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         cur = conn.cursor()
         print("name",name)
-        sql = "SELECT status FROM motorstatus WHERE name = %s"
+        sql = "SELECT * FROM roomstatus WHERE rid = %s"
         var = (name, )
         cur.execute(sql,var)
         data = (cur.fetchall())
-        print("data",data)
-        data = data[0][0]
-        sql = "UPDATE ping SET date = %s ,time = %s WHERE name = %s"
-        adr = (date,time,name, )
+        rpl = str(data[0][3]) + str(data[0][4])
+        print("data",rpl)
+        sql = "UPDATE roomdata SET ping = %s WHERE rid = %s"
+        adr = (datetime.now(),name,)
         cur.execute(sql,adr)
         conn.commit()
         cur.close()
         conn.close()
-        # data = "aa"
     except:
         data = "pass"
-    return str(data)
+    return str(rpl)
 
 @app.route('/sched', methods=['GET','POST'])
 def sched():
@@ -487,5 +493,5 @@ if __name__ == '__main__':
     # db.switch.drop()
     app.jinja_env.auto_reload = True
     app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.run(host='0.0.0.0', port=80)
+    app.run(host='0.0.0.0', port=81)
         
