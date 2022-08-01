@@ -400,16 +400,19 @@ def espac():
         var = (name, )
         cur.execute(sql,var)
         data = (cur.fetchall())
-        rpl = str(data[0][3]) + str(data[0][4])
-        print("data",rpl)
-        sql = "UPDATE roomdata SET ping = %s WHERE rid = %s"
-        adr = (datetime.now(),name,)
-        cur.execute(sql,adr)
-        conn.commit()
-        cur.close()
-        conn.close()
+        if(len(data)<0):
+            rpl = "name mismatch"
+        else:
+            rpl = str(data[0][3]) + str(data[0][4])
+            print("data",rpl)
+            sql = "UPDATE roomdata SET ping = %s WHERE rid = %s"
+            adr = (datetime.now(),name,)
+            cur.execute(sql,adr)
+            conn.commit()
+            cur.close()
+            conn.close()
     except:
-        data = "pass"
+        rpl = "name mismatch"
     return str(rpl)
 
 @app.route('/sched', methods=['GET','POST'])
